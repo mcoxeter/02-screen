@@ -1,8 +1,11 @@
-Data is saved in this fixed folder: C:\Users\Mike\OneDrive - Digital Sparcs\Investing\Value Investing Process\Business analysis
+# stock-screen
 
-# value
-
+**Usage**
 `npm start -- FB`
 
-Evaluate the intrincic value using the discounted cash flow method.
-It will output the results into the Business analysis in a folder with the symbol name.
+This program will score a stock on kpis for my value-investing principles. The results are outputted into the following folder:
+`C:\Users\Mike\OneDrive - Digital Sparcs\Investing\Value Investing Process\Business analysis/{stock}/basics`
+
+The output file is named {execution date}.json
+
+The program relies on core-data being created for the stock before hand. See [core-data](https://github.com/mcoxeter/core-data)
