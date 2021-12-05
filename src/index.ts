@@ -34,11 +34,15 @@ async function app() {
   const cash_from_operations: number[] =
     stats.data.data.financials.annual.cf_cfo;
 
-  const total_current_assets: number[] =
-    stats.data.data.financials.annual.total_current_assets;
+  const total_current_assets: number[] = lastNFromArray(
+    10,
+    stats.data.data.financials.annual.total_current_assets
+  );
 
-  const total_current_liabilities: number[] =
-    stats.data.data.financials.annual.total_current_liabilities;
+  const total_current_liabilities: number[] = lastNFromArray(
+    10,
+    stats.data.data.financials.annual.total_current_liabilities
+  );
 
   const total_equity: number[] = stats.data.data.financials.annual.total_equity;
 
