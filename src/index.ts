@@ -30,7 +30,8 @@ async function app() {
   const stats = require(`${path}/core/${lastDataFile}`);
 
   const longTermDebt = stats.data.data.financials.annual.lt_debt;
-  const ppe_net: number[] = stats.data.data.financials.annual.cfi_ppe_net;
+  const cfi_ppe_purchases: number[] =
+    stats.data.data.financials.annual.cfi_ppe_purchases;
   const cash_from_operations: number[] =
     stats.data.data.financials.annual.cf_cfo;
 
@@ -52,12 +53,12 @@ async function app() {
 
   const fcf10Years = add_values(
     lastNFromArray(10, cash_from_operations),
-    lastNFromArray(10, ppe_net)
+    lastNFromArray(10, cfi_ppe_purchases)
   );
 
   const fcfLastYear: number = add_values(
     lastNFromArray(1, cash_from_operations),
-    lastNFromArray(1, ppe_net)
+    lastNFromArray(1, cfi_ppe_purchases)
   )[0];
 
   const lackOfDebtScore = scoreLackOfLongTermDebt(longTermDebt, fcfLastYear);
@@ -77,11 +78,17 @@ async function app() {
 
   const equityIncreasingScore = scoreIncreasing(total_equity);
 
+  const fcfAnalysis = {
+    notes: 'values are from oldest to newest',
+    fcf10Years,
+    fcfIncreasingScore,
+    fcfPositiveScore
+  };
+
   let basics = {
     symbol,
     lackOfDebtScore,
-    fcfIncreasingScore,
-    fcfPositiveScore,
+    fcfAnalysis,
     assetsIncreasingScore,
     liabilitiesDescreasingScore,
     assetsVsLiabilitesScore,
@@ -125,6 +132,9 @@ function scoreRatio(values1: number[], values2: number[]): number {
 function scoreLackOfLongTermDebt(annualDebt: number[], fcf: number): number {
   // Does the managment like using debt?
   // Can the current debt be paid off with 3 years of fcf?
+
+  // TODO: The result need to explain. so we see it in the JSON.
+  //       E.g. What we are scoring on.
 
   let managementScore = 0;
   for (const debt of lastNFromArray(10, annualDebt)) {
