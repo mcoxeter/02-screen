@@ -5,10 +5,9 @@ This program will score the fundamental numbers for a business. This score will 
 ## Setup
 
 you need to create a config.json file. This will configure the program.
-There are two parameters you need to add.
+There is one parameter you need to add.
 
-1. apikey - This an apikey from https://quickfs.net/ you will need to create a free account to get this key.
-2. path - This is a folder path to where your output files will be stored on your harddisk.
+1. path - This is a folder path to where your output files will be stored on your harddisk.
 
 This is an example of a config.json file:
 
