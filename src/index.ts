@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 import fs from 'fs';
+const config = require('./config.json');
 
 async function app() {
   var myArgs = process.argv.slice(2);
   const symbol = myArgs[0];
 
-  const path = `C:/Users/Mike/OneDrive - Digital Sparcs/Investing/Value Investing Process/Business analysis/Evaluation/${symbol}/`;
+  const path = `${config.path}/${symbol}`;
 
-  const requiredPaths = [path, `${path}/basics`];
+  const requiredPaths = [path, `${path}/02-screen`];
   const nowDate = new Date();
   const padNum = (num: number) => num.toString().padStart(2, '0');
 
@@ -35,6 +36,13 @@ async function app() {
   const cash_from_operations: number[] =
     stats.data.data.financials.annual.cf_cfo;
 
+  const periods: number[] = lastNFromArray<string>(
+    10,
+    stats.data.data.financials.annual.period_end_date
+  )
+    .map((x) => x.split('-')[0])
+    .map((x) => Number(x));
+
   const total_current_assets: number[] = lastNFromArray(
     10,
     stats.data.data.financials.annual.total_current_assets
@@ -61,7 +69,7 @@ async function app() {
     lastNFromArray(1, cfi_ppe_purchases)
   )[0];
 
-  const lackOfDebtScore = scoreLackOfLongTermDebt(longTermDebt, fcfLastYear);
+  const debtAnalysis = analyseDebt(periods, longTermDebt, fcfLastYear);
 
   const fcfIncreasingScore = scoreIncreasing(fcf10Years);
   const fcfPositiveScore = scorePositive(fcf10Years);
@@ -71,7 +79,8 @@ async function app() {
     total_current_liabilities
   );
 
-  const assetsVsLiabilitesScore = scoreRatio(
+  const ratioAnalysis = analyseRatio(
+    periods,
     total_current_assets,
     total_current_liabilities
   );
@@ -79,79 +88,112 @@ async function app() {
   const equityIncreasingScore = scoreIncreasing(total_equity);
 
   const fcfAnalysis = {
-    notes: 'values are from oldest to newest',
+    notes:
+      'This looks at the free cash flow over the last ten years. It is scoring for positive and increasing values.',
+    periods,
     fcf10Years,
     fcfIncreasingScore,
     fcfPositiveScore
   };
 
-  let basics = {
+  let screen = {
     symbol,
-    lackOfDebtScore,
+    debtAnalysis,
     fcfAnalysis,
     assetsIncreasingScore,
     liabilitiesDescreasingScore,
-    assetsVsLiabilitesScore,
+    ratioAnalysis,
     equityIncreasingScore,
     rating:
-      lackOfDebtScore +
+      debtAnalysis.score +
       fcfIncreasingScore +
       fcfPositiveScore +
       assetsIncreasingScore +
       liabilitiesDescreasingScore +
-      assetsVsLiabilitesScore +
+      ratioAnalysis.score +
       equityIncreasingScore
   };
 
-  console.log('Writing ', `${path}basics/${nowDateStr}.json`);
+  console.log('Writing ', `${path}/02-screen/${nowDateStr}.json`);
   try {
     fs.writeFileSync(
-      `${path}/basics/${nowDateStr}.json`,
-      JSON.stringify(basics, undefined, 4)
+      `${path}/02-screen/${nowDateStr}.json`,
+      JSON.stringify(screen, undefined, 4)
     );
   } catch (err) {
     console.error(err);
   }
 }
 
-function scoreRatio(values1: number[], values2: number[]): number {
-  if (values1.length !== values2.length) {
+interface IRatioAnalysis {
+  notes: string;
+  periods: number[];
+  total_current_assets: number[];
+  total_current_liabilities: number[];
+  score: number;
+}
+function analyseRatio(
+  periods: number[],
+  total_current_assets: number[],
+  total_current_liabilities: number[]
+): IRatioAnalysis {
+  if (total_current_assets.length !== total_current_liabilities.length) {
     throw new Error('values have different lengths');
   }
 
   let score = 0;
-  for (let i = 0; i < values1.length; i++) {
-    const ratio = values1[i] / values2[i];
+  for (let i = 0; i < total_current_assets.length; i++) {
+    const ratio = total_current_assets[i] / total_current_liabilities[i];
 
     score += 1 * ratio; // +ve ratios give more, -ve rations give less
   }
 
-  return Math.round(score / values1.length);
+  return {
+    notes:
+      'This scores the ratio between assests and liabilities in the company. The more assest than libabilites the better.',
+    periods,
+    total_current_assets,
+    total_current_liabilities,
+    score: Math.round(score / total_current_assets.length)
+  };
 }
 
-function scoreLackOfLongTermDebt(annualDebt: number[], fcf: number): number {
-  // Does the managment like using debt?
-  // Can the current debt be paid off with 3 years of fcf?
-
-  // TODO: The result need to explain. so we see it in the JSON.
-  //       E.g. What we are scoring on.
-
-  let managementScore = 0;
+interface IDebtAnalysis {
+  notes: string;
+  periods: number[];
+  annualDebt: number[];
+  fcf: number;
+  currentLongTermDebt: number;
+  zeroDebtScore: number;
+  canRepayDebtWithFCFScore: number;
+  score: number;
+}
+function analyseDebt(
+  periods: number[],
+  annualDebt: number[],
+  fcf: number
+): IDebtAnalysis {
+  let zeroDebtScore = 0;
   for (const debt of lastNFromArray(10, annualDebt)) {
     if (debt === 0) {
-      managementScore++;
+      zeroDebtScore++;
     }
   }
 
   const currentLongTermDebt = annualDebt.slice(-1)[0];
+  const canRepayDebtWithFCFScore = currentLongTermDebt < fcf * 3 ? 10 : -10;
 
-  if (currentLongTermDebt < fcf * 3) {
-    managementScore += 10;
-  } else {
-    managementScore -= 10;
-  }
-
-  return managementScore;
+  return {
+    notes:
+      'This looks at the long term debt in the company and is they can easily repay it. It is looking at the risk of bankrupty.',
+    periods,
+    annualDebt,
+    fcf,
+    currentLongTermDebt,
+    zeroDebtScore,
+    canRepayDebtWithFCFScore,
+    score: zeroDebtScore + canRepayDebtWithFCFScore
+  };
 }
 
 function scoreIncreasing(values: number[]): number {
@@ -196,7 +238,7 @@ function scorePositive(value: number[]): number {
   return score;
 }
 
-function lastNFromArray(n: number, values: number[]): number[] {
+function lastNFromArray<T>(n: number, values: T[]): T[] {
   return values.slice(-n);
 }
 
