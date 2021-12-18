@@ -71,8 +71,7 @@ async function app() {
 
   const debtAnalysis = analyseDebt(periods, longTermDebt, fcfLastYear);
 
-  const fcfIncreasingScore = scoreIncreasing(fcf10Years);
-  const fcfPositiveScore = scorePositive(fcf10Years);
+  const fcfAnalysis = analyseFcf(periods, fcf10Years);
 
   const assetsIncreasingScore = scoreIncreasing(total_current_assets);
   const liabilitiesDescreasingScore = scoreDecreasing(
@@ -87,15 +86,6 @@ async function app() {
 
   const equityIncreasingScore = scoreIncreasing(total_equity);
 
-  const fcfAnalysis = {
-    notes:
-      'This looks at the free cash flow over the last ten years. It is scoring for positive and increasing values.',
-    periods,
-    fcf10Years,
-    fcfIncreasingScore,
-    fcfPositiveScore
-  };
-
   let screen = {
     symbol,
     debtAnalysis,
@@ -106,8 +96,7 @@ async function app() {
     equityIncreasingScore,
     rating:
       debtAnalysis.score +
-      fcfIncreasingScore +
-      fcfPositiveScore +
+      fcfAnalysis.score +
       assetsIncreasingScore +
       liabilitiesDescreasingScore +
       ratioAnalysis.score +
@@ -125,12 +114,43 @@ async function app() {
   }
 }
 
-interface IRatioAnalysis {
-  notes: string;
+interface IFcfAnalysis extends IAnalysis {
+  periods: number[];
+  fcf10Years: number[];
+  fcfIncreasingScore: number;
+  fcfPositiveScore: number;
+}
+
+function analyseFcf(periods: number[], fcf10Years: number[]): IFcfAnalysis {
+  const fcfIncreasingScore = scoreIncreasing(fcf10Years);
+  const fcfPositiveScore = scorePositive(fcf10Years);
+  return {
+    description:
+      'This looks at the free cash flow over the last ten years. It is scoring for positive and increasing values.',
+    greenFlags: [],
+    redFlags: [],
+    reference: [],
+    periods,
+    fcf10Years,
+    fcfIncreasingScore,
+    fcfPositiveScore,
+    score: fcfIncreasingScore + fcfPositiveScore
+  };
+}
+
+interface IAnalysis {
+  description: string;
+  reference: string[];
+  redFlags: string[];
+  greenFlags: string[];
+
+  score: number;
+}
+
+interface IRatioAnalysis extends IAnalysis {
   periods: number[];
   total_current_assets: number[];
   total_current_liabilities: number[];
-  score: number;
 }
 function analyseRatio(
   periods: number[],
@@ -149,8 +169,11 @@ function analyseRatio(
   }
 
   return {
-    notes:
+    description:
       'This scores the ratio between assests and liabilities in the company. The more assest than libabilites the better.',
+    reference: [],
+    redFlags: [],
+    greenFlags: [],
     periods,
     total_current_assets,
     total_current_liabilities,
@@ -158,15 +181,13 @@ function analyseRatio(
   };
 }
 
-interface IDebtAnalysis {
-  notes: string;
+interface IDebtAnalysis extends IAnalysis {
   periods: number[];
   annualDebt: number[];
   fcf: number;
   currentLongTermDebt: number;
   zeroDebtScore: number;
   canRepayDebtWithFCFScore: number;
-  score: number;
 }
 function analyseDebt(
   periods: number[],
@@ -184,8 +205,11 @@ function analyseDebt(
   const canRepayDebtWithFCFScore = currentLongTermDebt < fcf * 3 ? 10 : -10;
 
   return {
-    notes:
+    description:
       'This looks at the long term debt in the company and is they can easily repay it. It is looking at the risk of bankrupty.',
+    reference: [],
+    redFlags: [],
+    greenFlags: [],
     periods,
     annualDebt,
     fcf,
