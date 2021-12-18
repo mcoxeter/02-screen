@@ -20,6 +20,8 @@ This is an example of a config.json file:
 
 ## Usage
 
+> Before you run this program, you will need to have run the `01-data` program first on the stock.
+
 In this example the program will score the fundamental data on Facebook
 
 `npm start -- FB`
