@@ -30,7 +30,10 @@ async function app() {
 
   const stats = require(`${path}/core/${lastDataFile}`);
 
-  const longTermDebt = stats.data.data.financials.annual.lt_debt;
+  const longTermDebt: number[] = lastNFromArray(
+    10,
+    stats.data.data.financials.annual.lt_debt
+  );
   const cfi_ppe_purchases: number[] =
     stats.data.data.financials.annual.cfi_ppe_purchases;
   const cash_from_operations: number[] =
@@ -51,6 +54,11 @@ async function app() {
   const total_current_liabilities: number[] = lastNFromArray(
     10,
     stats.data.data.financials.annual.total_current_liabilities
+  );
+
+  const roic: number[] = lastNFromArray(
+    10,
+    stats.data.data.financials.annual.roic
   );
 
   const total_equity: number[] = stats.data.data.financials.annual.total_equity;
@@ -81,22 +89,22 @@ async function app() {
 
   const equityAnalysis = analyseEquity(periods, total_equity);
 
-  // const equityIncreasingScore = scoreIncreasing(total_equity);
+  const roicAnalysis = analyseROIC(periods, roic);
 
   let screen = {
     symbol,
-    notes:
-      'Free Cash Flow - Is this a money making machine. Debt - Is there a rick of bankruptcy. ',
     references: ["'https://youtu.be/j0TK40w9HhY'"],
     debtAnalysis,
     fcfAnalysis,
     ratioAnalysis,
     equityAnalysis,
+    roicAnalysis,
     rating:
       debtAnalysis.score +
       fcfAnalysis.score +
       ratioAnalysis.score +
-      equityAnalysis.score
+      equityAnalysis.score +
+      roicAnalysis.score
   };
 
   console.log('Writing ', `${path}/02-screen/${nowDateStr}.json`);
@@ -195,7 +203,7 @@ function analyseRatio(
 interface IDebtAnalysis extends IAnalysis {
   periods: number[];
   annualDebt: number[];
-  fcf: number;
+  currentFcf: number;
   currentLongTermDebt: number;
   zeroDebtScore: number;
   canRepayDebtWithFCFScore: number;
@@ -203,7 +211,7 @@ interface IDebtAnalysis extends IAnalysis {
 function analyseDebt(
   periods: number[],
   annualDebt: number[],
-  fcf: number
+  currentFcf: number
 ): IDebtAnalysis {
   let zeroDebtScore = 0;
   for (const debt of lastNFromArray(10, annualDebt)) {
@@ -213,17 +221,27 @@ function analyseDebt(
   }
 
   const currentLongTermDebt = annualDebt.slice(-1)[0];
-  const canRepayDebtWithFCFScore = currentLongTermDebt < fcf * 3 ? 10 : -10;
+  const canEasilyPaybackDebt = currentLongTermDebt < currentFcf * 3;
+  const canRepayDebtWithFCFScore = canEasilyPaybackDebt ? 10 : -10;
+
+  const redFlags = canEasilyPaybackDebt
+    ? []
+    : [
+        "This company has a debt issue. It can't repay its long term debt with three years of FCF."
+      ];
+
+  const greenFlags =
+    currentLongTermDebt === 0 ? ['This company has no debt! Nice:)'] : [];
 
   return {
     description:
       'This looks at the long term debt in the company and is they can easily repay it. It is looking at the risk of bankrupty.',
     reference: [],
-    redFlags: [],
-    greenFlags: [],
+    redFlags: redFlags,
+    greenFlags: greenFlags,
     periods,
     annualDebt,
-    fcf,
+    currentFcf,
     currentLongTermDebt,
     zeroDebtScore,
     canRepayDebtWithFCFScore,
@@ -252,6 +270,37 @@ function analyseEquity(
     total_equity,
     equityIncreasingScore,
     score: equityIncreasingScore
+  };
+}
+
+interface IROICAnalysis extends IAnalysis {
+  periods: number[];
+  roic: number[];
+  roicIncreasingScore: number;
+  roicOver15PercentScore: number;
+}
+
+function analyseROIC(periods: number[], roic: number[]): IROICAnalysis {
+  const roicIncreasingScore = scoreIncreasing(roic);
+
+  let roicOver15PercentScore = 0;
+  for (const aRoic of roic) {
+    if (aRoic > 0.15) {
+      roicOver15PercentScore++;
+    }
+  }
+
+  return {
+    description:
+      'How well the company is using is money to generate further returns. A measure of how good the management team is. Ideally this should be above 15%. We want over 15% otherwise we could do better ourselves.',
+    greenFlags: [],
+    redFlags: [],
+    reference: [],
+    periods,
+    roic,
+    roicIncreasingScore,
+    roicOver15PercentScore,
+    score: roicIncreasingScore + roicOver15PercentScore
   };
 }
 

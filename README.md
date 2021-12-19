@@ -1,6 +1,28 @@
 # 02-screen
 
-This program will score the fundamental numbers for a business. This score will dermine if it is a candidate for further analysis.
+This program will score the fundamental numbers for a business. This score will dermine if it is a candidate for further analysis.<br>
+
+<p>The analysis examins the following areas:</p>
+
+**Free Cash Flow (FCF)**
+
+> The cash a company generates after taking into consideration cash outflows that support its operations and maintain its capital assets.<br>
+
+**Long term debt**
+
+> High debt is a bankruptcy risk. Can it pay back its debt easily with the FCF?<br>
+
+**Assest and Liabilities**
+
+> Is there a good ratio between the assests and liabilites? This is also a way to evaluate the risk of the company.<br>
+
+**Equity**
+
+> What's left over when you subtract all the liabilities from the assets. It's what the business owners actually own. Is this increasing?<br>
+
+**ROIC**
+
+> How well the company is using is money to generate further returns. A measure of how good the management team is.<br>
 
 ## Setup
 
@@ -35,14 +57,3 @@ _path_/_stock-name_/02-screen/_date_.json
 
 e.g.
 C:/Business analysis/Evaluation/FB/02-screen/2021.12.18.json
-
-## What does it do?
-
-It performs analysis on
-
-1. Debt (Risk)
-2. Free Cash Flow (Positive and increasing)
-3. Assest vs Liabilities (Lots more assets than liabilites)
-4. Equity (Positive and increasing)
-
-The output file contains a scoring and a breakdown of the score.
