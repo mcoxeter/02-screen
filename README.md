@@ -22,7 +22,7 @@ This program will score the fundamental numbers for a business. This score will 
 
 **ROIC**
 
-> How well the company is using is money to generate further returns. A measure of how good the management team is.<br>
+> How well the company is using it's money to generate further returns. A measure of how good the management team is.<br>
 
 ## Setup
 
