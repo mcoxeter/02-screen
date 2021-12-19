@@ -240,12 +240,20 @@ function analyseDebt(
         "This company has a debt issue. It can't repay its long term debt with three years of FCF."
       ];
 
-  const greenFlags =
-    currentLongTermDebt === 0 ? ['This company has no debt! Nice:)'] : [];
+  const greenFlags: string[] = [];
+
+  if (currentLongTermDebt === 0) {
+    greenFlags.push('This company has no current debt! Nice:');
+  }
+  if (zeroDebtScore === 0) {
+    greenFlags.push(
+      'This company has not had any debt in the last 10 years!! Amazing:)'
+    );
+  }
 
   return {
     description:
-      'This looks at the long term debt in the company and is they can easily repay it. It is looking at the risk of bankrupty.',
+      'This looks at the long term debt in the company and if they can easily repay it. It is looking at the risk of bankrupty.',
     reference: [],
     redFlags: redFlags,
     greenFlags: greenFlags,
