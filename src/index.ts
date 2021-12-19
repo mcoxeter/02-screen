@@ -23,12 +23,12 @@ async function app() {
   });
 
   const lastDataFile = fs
-    .readdirSync(`${path}/core`)
+    .readdirSync(`${path}/01-data`)
     .filter((file) => file.endsWith('.json'))
     .sort((a, b) => b.localeCompare(a))
     .find(() => true);
 
-  const stats = require(`${path}/core/${lastDataFile}`);
+  const stats = require(`${path}/01-data/${lastDataFile}`);
 
   const longTermDebt: number[] = lastNFromArray(
     10,
