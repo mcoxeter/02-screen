@@ -185,12 +185,17 @@ function analyseRatio(
 
   let ratioScore = 0;
   for (let i = 0; i < total_current_assets.length; i++) {
-    const ratio = Math.round(
-      total_current_assets[i] / total_current_liabilities[i]
-    );
-    ratios.push(ratio);
+    // when the total liabilites are 0, then we need to skip
+    if (total_current_liabilities[i] > 0) {
+      const ratio = Math.round(
+        total_current_assets[i] / total_current_liabilities[i]
+      );
+      ratios.push(ratio);
 
-    ratioScore += 1 * ratio; // +ve ratios give more, -ve rations give less
+      ratioScore += 1 * ratio; // +ve ratios give more, -ve rations give less
+    } else {
+      ratios.push(0);
+    }
   }
 
   ratioScore = Math.round(ratioScore / total_current_assets.length);
