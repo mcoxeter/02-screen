@@ -128,11 +128,21 @@ interface IFcfAnalysis extends IAnalysis {
 function analyseFcf(periods: number[], fcf10Years: number[]): IFcfAnalysis {
   const fcfIncreasingScore = scoreIncreasing(fcf10Years);
   const fcfPositiveScore = scorePositive(fcf10Years);
+
+  const redflags =
+    fcfPositiveScore < 5
+      ? ['Warning Will Robinson. This has a terrible FCF']
+      : [];
+  const greenflags =
+    fcfIncreasingScore === 10
+      ? ['Increasing FCF consistantly for the last ten years. Amazing!']
+      : [];
+
   return {
     description:
       'This looks at the free cash flow over the last ten years. It is scoring for positive and increasing values.',
-    greenFlags: [],
-    redFlags: [],
+    greenFlags: greenflags,
+    redFlags: redflags,
     reference: [],
     periods,
     fcf10Years,
@@ -260,11 +270,21 @@ function analyseEquity(
   total_equity: number[]
 ): IEquityAnalysis {
   const equityIncreasingScore = scoreIncreasing(total_equity);
+
+  const redflags =
+    equityIncreasingScore < 5
+      ? ['This company looks like it is going backwards.']
+      : [];
+  const greenflags =
+    equityIncreasingScore === 10
+      ? ['Increasing equity consistantly for the last ten years. Amazing!']
+      : [];
+
   return {
     description:
       "Equity is What's left over when you subtract all the liabilities from the assets. It's what the business owners actually own. This is on the balance sheet",
-    greenFlags: [],
-    redFlags: [],
+    greenFlags: greenflags,
+    redFlags: redflags,
     reference: [],
     periods,
     total_equity,
