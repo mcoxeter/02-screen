@@ -73,34 +73,30 @@ async function app() {
 
   const fcfAnalysis = analyseFcf(periods, fcf10Years);
 
-  const assetsIncreasingScore = scoreIncreasing(total_current_assets);
-  const liabilitiesDescreasingScore = scoreDecreasing(
-    total_current_liabilities
-  );
-
   const ratioAnalysis = analyseRatio(
     periods,
     total_current_assets,
     total_current_liabilities
   );
 
-  const equityIncreasingScore = scoreIncreasing(total_equity);
+  const equityAnalysis = analyseEquity(periods, total_equity);
+
+  // const equityIncreasingScore = scoreIncreasing(total_equity);
 
   let screen = {
     symbol,
+    notes:
+      'Free Cash Flow - Is this a money making machine. Debt - Is there a rick of bankruptcy. ',
+    references: ["'https://youtu.be/j0TK40w9HhY'"],
     debtAnalysis,
     fcfAnalysis,
-    assetsIncreasingScore,
-    liabilitiesDescreasingScore,
     ratioAnalysis,
-    equityIncreasingScore,
+    equityAnalysis,
     rating:
       debtAnalysis.score +
       fcfAnalysis.score +
-      assetsIncreasingScore +
-      liabilitiesDescreasingScore +
       ratioAnalysis.score +
-      equityIncreasingScore
+      equityAnalysis.score
   };
 
   console.log('Writing ', `${path}/02-screen/${nowDateStr}.json`);
@@ -151,6 +147,9 @@ interface IRatioAnalysis extends IAnalysis {
   periods: number[];
   total_current_assets: number[];
   total_current_liabilities: number[];
+  ratios: number[];
+  ratioScore: number;
+  ratiosIncreasingScore: number;
 }
 function analyseRatio(
   periods: number[],
@@ -161,23 +160,35 @@ function analyseRatio(
     throw new Error('values have different lengths');
   }
 
-  let score = 0;
-  for (let i = 0; i < total_current_assets.length; i++) {
-    const ratio = total_current_assets[i] / total_current_liabilities[i];
+  let ratios: number[] = [];
 
-    score += 1 * ratio; // +ve ratios give more, -ve rations give less
+  let ratioScore = 0;
+  for (let i = 0; i < total_current_assets.length; i++) {
+    const ratio = Math.round(
+      total_current_assets[i] / total_current_liabilities[i]
+    );
+    ratios.push(ratio);
+
+    ratioScore += 1 * ratio; // +ve ratios give more, -ve rations give less
   }
+
+  ratioScore = Math.round(ratioScore / total_current_assets.length);
+
+  const ratiosIncreasingScore = scoreIncreasing(ratios);
 
   return {
     description:
-      'This scores the ratio between assests and liabilities in the company. The more assest than libabilites the better.',
+      'This scores the ratio between assests and liabilities in the company. The more assests than libabilites the better.',
     reference: [],
     redFlags: [],
     greenFlags: [],
     periods,
     total_current_assets,
     total_current_liabilities,
-    score: Math.round(score / total_current_assets.length)
+    ratios,
+    ratioScore,
+    ratiosIncreasingScore,
+    score: ratiosIncreasingScore + ratioScore
   };
 }
 
@@ -217,6 +228,30 @@ function analyseDebt(
     zeroDebtScore,
     canRepayDebtWithFCFScore,
     score: zeroDebtScore + canRepayDebtWithFCFScore
+  };
+}
+
+interface IEquityAnalysis extends IAnalysis {
+  periods: number[];
+  total_equity: number[];
+  equityIncreasingScore: number;
+}
+
+function analyseEquity(
+  periods: number[],
+  total_equity: number[]
+): IEquityAnalysis {
+  const equityIncreasingScore = scoreIncreasing(total_equity);
+  return {
+    description:
+      "Equity is What's left over when you subtract all the liabilities from the assets. It's what the business owners actually own. This is on the balance sheet",
+    greenFlags: [],
+    redFlags: [],
+    reference: [],
+    periods,
+    total_equity,
+    equityIncreasingScore,
+    score: equityIncreasingScore
   };
 }
 
