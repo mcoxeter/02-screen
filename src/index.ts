@@ -61,7 +61,10 @@ async function app() {
     stats.data.data.financials.annual.roic
   );
 
-  const total_equity: number[] = stats.data.data.financials.annual.total_equity;
+  const total_equity: number[] = lastNFromArray(
+    10,
+    stats.data.data.financials.annual.total_equity
+  );
 
   if (cash_from_operations.length < 10) {
     throw new Error('Company has not been reporting results for 10 years');
@@ -245,9 +248,15 @@ function analyseDebt(
   if (currentLongTermDebt === 0) {
     greenFlags.push('This company has no current debt! Nice:');
   }
-  if (zeroDebtScore === 0) {
+  if (zeroDebtScore === 10) {
     greenFlags.push(
       'This company has not had any debt in the last 10 years!! Amazing:)'
+    );
+  }
+
+  if (canRepayDebtWithFCFScore === 10 && annualDebt.some((x) => x > 0)) {
+    greenFlags.push(
+      'They are using debt sensibly. Always been able to repay it easily.'
     );
   }
 
