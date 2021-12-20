@@ -95,8 +95,10 @@ async function app() {
   const roicAnalysis = analyseROIC(periods, roic);
 
   let screen = {
+    type: '03-screen',
     symbol,
     references: ["'https://youtu.be/j0TK40w9HhY'"],
+    date: nowDateStr,
     debtAnalysis,
     fcfAnalysis,
     ratioAnalysis,
