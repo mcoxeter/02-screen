@@ -2,7 +2,7 @@
 
 This program will score the fundamental numbers for a business. This score will dermine if it is a candidate for further analysis.<br>
 
-<p>The analysis examins the following areas:</p>
+<p>The analysis examines the following areas:</p>
 
 **Free Cash Flow (FCF)**
 
