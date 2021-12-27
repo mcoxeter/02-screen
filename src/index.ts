@@ -4,13 +4,28 @@ const config = require('./config.json');
 
 async function app() {
   var myArgs = process.argv.slice(2);
+
+  if (myArgs.length === 0) {
+    // When no arguments are passed then we use the evaluate.json file as a list of stocks to evaluate.
+    const path = `${config.path}`;
+    const evaluationList = require(`${path}/evaluate.json`);
+
+    console.log('Evaluating stocks from evaluate.json');
+
+    for (const evaluate of evaluationList.evaluate) {
+      await evaluateStock(evaluate.Symbol);
+    }
+    return;
+  }
+
   for (const symbol of myArgs) {
     await evaluateStock(symbol);
   }
 }
 
 function evaluateStock(symbol: string): void {
-  const path = `${config.path}/${symbol}`;
+  console.log('Procesing stock ' + symbol);
+  const path = `${config.path}/Evaluation/${symbol}`;
 
   const requiredPaths = [path, `${path}/02-screen`];
   const nowDate = new Date();
@@ -34,44 +49,48 @@ function evaluateStock(symbol: string): void {
 
   const stats = require(`${path}/01-data/${lastDataFile}`);
 
-  const longTermDebt: number[] = lastNFromArray(
-    10,
-    stats.data.data.financials.annual.lt_debt
-  );
-  const cfi_ppe_purchases: number[] =
-    stats.data.data.financials.annual.cfi_ppe_purchases;
-  const cash_from_operations: number[] =
-    stats.data.data.financials.annual.cf_cfo;
+  if (!stats.data.data.financials) {
+    write(`${path}/02-screen/${nowDateStr}.json`, {
+      type: '02-screen',
+      redFlags: ['Company not found'],
+      symbol,
+      date: nowDateStr,
+      rating: 0
+    });
+    return;
+  }
 
-  const periods: number[] = lastNFromArray<string>(
-    10,
-    stats.data.data.financials.annual.period_end_date
-  )
+  const annual = stats.data.data.financials.annual;
+
+  const longTermDebt: number[] = lastNFromArray(10, annual.lt_debt);
+  const cfi_ppe_purchases: number[] = annual.cfi_ppe_purchases;
+  const cash_from_operations: number[] = annual.cf_cfo;
+
+  const periods: number[] = lastNFromArray<string>(10, annual.period_end_date)
     .map((x) => x.split('-')[0])
     .map((x) => Number(x));
 
-  const total_current_assets: number[] = lastNFromArray(
-    10,
-    stats.data.data.financials.annual.total_current_assets
-  );
+  const total_current_assets: number[] = annual.total_current_assets
+    ? lastNFromArray(10, annual.total_current_assets)
+    : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
-  const total_current_liabilities: number[] = lastNFromArray(
-    10,
-    stats.data.data.financials.annual.total_current_liabilities
-  );
+  const total_current_liabilities: number[] = annual.total_current_liabilities
+    ? lastNFromArray(10, annual.total_current_liabilities)
+    : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
-  const roic: number[] = lastNFromArray(
-    10,
-    stats.data.data.financials.annual.roic
-  );
+  const roic: number[] = lastNFromArray(10, annual.roic);
 
-  const total_equity: number[] = lastNFromArray(
-    10,
-    stats.data.data.financials.annual.total_equity
-  );
+  const total_equity: number[] = lastNFromArray(10, annual.total_equity);
 
   if (cash_from_operations.length < 10) {
-    throw new Error('Company has not been reporting results for 10 years');
+    write(`${path}/02-screen/${nowDateStr}.json`, {
+      type: '02-screen',
+      redFlags: ['Company has not been reporting results for 10 years'],
+      symbol,
+      date: nowDateStr,
+      rating: 0
+    });
+    return;
   }
 
   const fcf10Years = add_values(
@@ -121,12 +140,13 @@ function evaluateStock(symbol: string): void {
       roicAnalysis.score
   };
 
-  console.log('Writing ', `${path}/02-screen/${nowDateStr}.json`);
+  write(`${path}/02-screen/${nowDateStr}.json`, screen);
+}
+
+function write(file: string, screen: any): void {
+  console.log(`Writing ${file}`);
   try {
-    fs.writeFileSync(
-      `${path}/02-screen/${nowDateStr}.json`,
-      JSON.stringify(screen, undefined, 4)
-    );
+    fs.writeFileSync(file, JSON.stringify(screen, undefined, 4));
   } catch (err) {
     console.error(err);
   }
