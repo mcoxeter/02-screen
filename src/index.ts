@@ -4,8 +4,12 @@ const config = require('./config.json');
 
 async function app() {
   var myArgs = process.argv.slice(2);
-  const symbol = myArgs[0];
+  for (const symbol of myArgs) {
+    await evaluateStock(symbol);
+  }
+}
 
+function evaluateStock(symbol: string): void {
   const path = `${config.path}/${symbol}`;
 
   const requiredPaths = [path, `${path}/02-screen`];
@@ -97,7 +101,12 @@ async function app() {
   let screen = {
     type: '03-screen',
     symbol,
-    references: ["'https://youtu.be/j0TK40w9HhY'"],
+    references: [
+      {
+        displayName: 'Guide to Quickly Screen Stocks',
+        url: 'https://youtu.be/j0TK40w9HhY'
+      }
+    ],
     date: nowDateStr,
     debtAnalysis,
     fcfAnalysis,
@@ -148,7 +157,12 @@ function analyseFcf(periods: number[], fcf10Years: number[]): IFcfAnalysis {
       'This looks at the free cash flow over the last ten years. It is scoring for positive and increasing values.',
     greenFlags: greenflags,
     redFlags: redflags,
-    reference: [],
+    reference: [
+      {
+        displayName: 'Section 2; Part 11 - Understanding the business : 04:30',
+        url: 'https://profitful.online/courses/introduction-to-stock-analysis'
+      }
+    ],
     periods,
     fcf10Years,
     fcfIncreasingScore,
@@ -157,9 +171,14 @@ function analyseFcf(periods: number[], fcf10Years: number[]): IFcfAnalysis {
   };
 }
 
+interface IReference {
+  displayName: string;
+  url: string;
+}
+
 interface IAnalysis {
   description: string;
-  reference: string[];
+  reference: IReference[];
   redFlags: string[];
   greenFlags: string[];
 
@@ -306,10 +325,15 @@ function analyseEquity(
 
   return {
     description:
-      "Equity is What's left over when you subtract all the liabilities from the assets. It's what the business owners actually own. This is on the balance sheet",
+      "**Important** Equity is What's left over when you subtract all the liabilities from the assets. It's what the business owners actually own. This is an important number for share price growth. This is on the balance sheet",
     greenFlags: greenflags,
     redFlags: redflags,
-    reference: [],
+    reference: [
+      {
+        displayName: 'Section 2; Part 11 - Understanding the business : 02:49',
+        url: 'https://profitful.online/courses/introduction-to-stock-analysis'
+      }
+    ],
     periods,
     total_equity,
     equityIncreasingScore,
