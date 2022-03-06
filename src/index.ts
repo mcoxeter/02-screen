@@ -65,6 +65,7 @@ function evaluateStock(symbol: string): void {
   const longTermDebt: number[] = lastNFromArray(10, annual.lt_debt);
   const cfi_ppe_purchases: number[] = annual.cfi_ppe_purchases;
   const cash_from_operations: number[] = annual.cf_cfo;
+  const cash: number[] = annual.cash_and_equiv;
 
   const periods: number[] = lastNFromArray<string>(10, annual.period_end_date)
     .map((x) => x.split('-')[0])
@@ -98,12 +99,19 @@ function evaluateStock(symbol: string): void {
     lastNFromArray(10, cfi_ppe_purchases)
   );
 
+  const cashLastYear = lastNFromArray(1, cash);
+
   const fcfLastYear: number = add_values(
     lastNFromArray(1, cash_from_operations),
     lastNFromArray(1, cfi_ppe_purchases)
   )[0];
 
-  const debtAnalysis = analyseDebt(periods, longTermDebt, fcfLastYear);
+  const debtAnalysis = analyseDebt(
+    periods,
+    longTermDebt,
+    fcfLastYear,
+    cashLastYear[0]
+  );
 
   const fcfAnalysis = analyseFcf(periods, fcf10Years);
 
@@ -263,6 +271,7 @@ interface IDebtAnalysis extends IAnalysis {
   periods: number[];
   annualDebt: number[];
   currentFcf: number;
+  currentCash: number;
   currentLongTermDebt: number;
   zeroDebtScore: number;
   canRepayDebtWithFCFScore: number;
@@ -270,7 +279,8 @@ interface IDebtAnalysis extends IAnalysis {
 function analyseDebt(
   periods: number[],
   annualDebt: number[],
-  currentFcf: number
+  currentFcf: number,
+  currentCash: number
 ): IDebtAnalysis {
   let zeroDebtScore = 0;
   for (const debt of lastNFromArray(10, annualDebt)) {
@@ -280,7 +290,8 @@ function analyseDebt(
   }
 
   const currentLongTermDebt = annualDebt.slice(-1)[0];
-  const canEasilyPaybackDebt = currentLongTermDebt < currentFcf * 3;
+  const canEasilyPaybackDebt =
+    currentLongTermDebt < currentFcf * 3 + currentCash;
   const canRepayDebtWithFCFScore = canEasilyPaybackDebt ? 10 : -10;
 
   const redFlags = canEasilyPaybackDebt
@@ -315,6 +326,7 @@ function analyseDebt(
     periods,
     annualDebt,
     currentFcf,
+    currentCash,
     currentLongTermDebt,
     zeroDebtScore,
     canRepayDebtWithFCFScore,
