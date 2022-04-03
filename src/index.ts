@@ -125,6 +125,8 @@ function evaluateStock(symbol: string): void {
 
   const roicAnalysis = analyseROIC(periods, roic);
 
+  const insiderAnalysis = analyseInsiderBuying(stats.insiderBuysInLast90Days);
+
   let screen = {
     type: '03-screen',
     symbol,
@@ -140,12 +142,14 @@ function evaluateStock(symbol: string): void {
     ratioAnalysis,
     equityAnalysis,
     roicAnalysis,
+    insiderAnalysis,
     rating:
       debtAnalysis.score +
       fcfAnalysis.score +
       ratioAnalysis.score +
       equityAnalysis.score +
-      roicAnalysis.score
+      roicAnalysis.score +
+      insiderAnalysis.score
   };
 
   write(`${path}/02-screen/${nowDateStr}.json`, screen);
@@ -370,6 +374,30 @@ function analyseEquity(
     total_equity,
     equityIncreasingScore,
     score: equityIncreasingScore
+  };
+}
+
+interface IInsiderAnalysis {
+  description: string;
+  insiderBuysInLast90Days: number;
+  score: number;
+}
+
+function analyseInsiderBuying(
+  insiderBuysInLast90Days: number
+): IInsiderAnalysis {
+  let score = 0;
+  if (insiderBuysInLast90Days > 0) {
+    score = 10;
+  }
+  if (insiderBuysInLast90Days > 5) {
+    score = 20;
+  }
+  return {
+    description:
+      'This is the number of executives buying into the stock in the last three months. Considered a good sign, as the only real reason a for doing this is there is an expectation of positive price movement.',
+    insiderBuysInLast90Days,
+    score
   };
 }
 
